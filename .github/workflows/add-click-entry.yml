@@ -1,0 +1,45 @@
+name: Add Click catalog entry
+
+on:
+  push:
+    branches:
+      - add-click-plugin
+
+permissions:
+  contents: write
+
+jobs:
+  update-readme:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: add-click-plugin
+      - name: Add Click in alphabetical order
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path("README.md")
+          text = path.read_text(encoding="utf-8")
+          entry = "- [Click](https://github.com/grapefruit0205/click) - Lifecycle-hook guardrail for Codex that enforces one approved execution boundary and blocks repeated replanning, rescanning, and over-verification."
+          anchor = "- [Clean Room](https://github.com/whit3rabbit/clean-room-skill) - Spec-first clean-room workflow for authorized source analysis, behavioral specs, role separation, and verification without replacement code."
+
+          if entry in text:
+              raise SystemExit(0)
+          if anchor not in text:
+              raise SystemExit("Clean Room anchor not found; refusing to edit README")
+
+          text = text.replace(anchor, anchor + "\n" + entry, 1)
+          path.write_text(text, encoding="utf-8")
+          PY
+          if git diff --quiet -- README.md; then
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add README.md
+          git commit -m "Add Click to Development & Workflow"
+          git push origin HEAD:add-click-plugin
